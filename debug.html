@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心理功能对决 - 调试页面</title>
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f7fafc;
+            color: #2d3748;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .debug-panel {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .debug-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+        }
+        
+        h2 {
+            color: #805ad5;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+        
+        h3 {
+            color: #4a5568;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .debug-message {
+            font-family: monospace;
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        ul {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        
+        li {
+            margin-bottom: 5px;
+        }
+        
+        button {
+            background-color: #805ad5;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .error {
+            color: #e53e3e;
+            font-weight: bold;
+        }
+        
+        .success {
+            color: #38a169;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>心理功能对决 - 调试页面</h1>
+    
+    <div class="debug-panel">
+        <div class="debug-section">
+            <h2>系统信息</h2>
+            <div id="system-info"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h2>资源加载检查</h2>
+            <button onclick="checkResources()">检查资源加载状态</button>
+            <div id="resources-status"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h2>全局函数检查</h2>
+            <button onclick="checkGlobalFunctions()">检查全局函数</button>
+            <div id="global-functions-status"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h2>组件测试</h2>
+            <button onclick="testStartScreen()">测试StartScreen组件</button>
+            <button onclick="testGameBoard()">测试GameBoard组件</button>
+            <div id="component-test-result"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h2>常见问题与解决方案</h2>
+            <h3>白屏问题解决方案</h3>
+            <ul>
+                <li>清除浏览器缓存并刷新页面</li>
+                <li>确保启用了JavaScript</li>
+                <li>检查浏览器控制台是否有错误信息</li>
+                <li>尝试使用不同的浏览器打开游戏</li>
+                <li>确保用HTTP服务器提供页面（而不是直接打开文件）</li>
+            </ul>
+            
+            <h3>游戏无法开始的解决方案</h3>
+            <ul>
+                <li>检查所有游戏资源是否正确加载</li>
+                <li>确保函数正确注册到全局作用域</li>
+                <li>尝试重启HTTP服务器</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- React Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    
+    <script>
+        // 获取系统信息
+        document.getElementById('system-info').innerHTML = `
+            <ul>
+                <li>浏览器: ${navigator.userAgent}</li>
+                <li>时间: ${new Date().toString()}</li>
+                <li>URL: ${window.location.href}</li>
+            </ul>
+        `;
+        
+        // 检查资源加载状态
+        function checkResources() {
+            const resourcesDiv = document.getElementById('resources-status');
+            resourcesDiv.innerHTML = '<div class="debug-message">正在检查资源加载状态...</div>';
+            
+            const resources = [
+                'src/assets/cardsData.js',
+                'src/assets/gameLogic.js',
+                'src/components/Card.js',
+                'src/components/GameLog.js',
+                'src/components/CardSelection.js',
+                'src/components/RulesModal.js',
+                'src/components/StartScreen.js',
+                'src/components/GameOverScreen.js',
+                'src/components/GameBoard.js',
+                'src/components/App.js',
+                'src/index.js'
+            ];
+            
+            let results = '';
+            let allLoaded = true;
+            
+            // 检查每个资源
+            resources.forEach(res => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('HEAD', res, false);
+                try {
+                    xhr.send();
+                    if (xhr.status === 200) {
+                        results += `<li class="success">✓ ${res} 已加载</li>`;
+                    } else {
+                        results += `<li class="error">✗ ${res} 加载失败 (${xhr.status})</li>`;
+                        allLoaded = false;
+                    }
+                } catch (e) {
+                    results += `<li class="error">✗ ${res} 加载错误: ${e.message}</li>`;
+                    allLoaded = false;
+                }
+            });
+            
+            let summary = allLoaded 
+                ? '<p class="success">所有资源加载正常</p>' 
+                : '<p class="error">部分资源加载失败，请查看详情</p>';
+            
+            resourcesDiv.innerHTML = `
+                ${summary}
+                <ul>${results}</ul>
+            `;
+        }
+        
+        // 检查全局函数
+        function checkGlobalFunctions() {
+            const statusDiv = document.getElementById('global-functions-status');
+            statusDiv.innerHTML = '<div class="debug-message">正在检查全局函数...</div>';
+            
+            const requiredFunctions = [
+                'createPlayerDeck',
+                'drawCards',
+                'playCard',
+                'computerPlay',
+                'handleCardSelection',
+                'makePrediction',
+                'endPlayerTurn',
+                'endComputerTurn'
+            ];
+            
+            const requiredComponents = [
+                'App',
+                'Card',
+                'CardSelection',
+                'GameBoard',
+                'GameLog',
+                'GameOverScreen',
+                'RulesModal',
+                'StartScreen'
+            ];
+            
+            let functionResults = '';
+            let componentResults = '';
+            let allFunctionsExist = true;
+            let allComponentsExist = true;
+            
+            // 检查游戏函数
+            requiredFunctions.forEach(fn => {
+                if (typeof window[fn] === 'function') {
+                    functionResults += `<li class="success">✓ ${fn} 已定义</li>`;
+                } else {
+                    functionResults += `<li class="error">✗ ${fn} 未定义</li>`;
+                    allFunctionsExist = false;
+                }
+            });
+            
+            // 检查组件
+            requiredComponents.forEach(comp => {
+                if (typeof window[comp] === 'function') {
+                    componentResults += `<li class="success">✓ ${comp} 组件已定义</li>`;
+                } else {
+                    componentResults += `<li class="error">✗ ${comp} 组件未定义</li>`;
+                    allComponentsExist = false;
+                }
+            });
+            
+            let functionSummary = allFunctionsExist 
+                ? '<p class="success">所有游戏函数已正确定义</p>' 
+                : '<p class="error">部分游戏函数未正确定义，请查看详情</p>';
+                
+            let componentSummary = allComponentsExist 
+                ? '<p class="success">所有组件已正确定义</p>' 
+                : '<p class="error">部分组件未正确定义，请查看详情</p>';
+            
+            statusDiv.innerHTML = `
+                <h3>游戏函数</h3>
+                ${functionSummary}
+                <ul>${functionResults}</ul>
+                
+                <h3>React组件</h3>
+                ${componentSummary}
+                <ul>${componentResults}</ul>
+            `;
+        }
+        
+        // 测试StartScreen组件
+        function testStartScreen() {
+            const resultDiv = document.getElementById('component-test-result');
+            resultDiv.innerHTML = '<div class="debug-message">正在测试StartScreen组件...</div>';
+            
+            try {
+                if (typeof window.StartScreen !== 'function') {
+                    throw new Error('StartScreen组件未定义');
+                }
+                
+                // 创建测试容器
+                const testContainer = document.createElement('div');
+                testContainer.id = 'test-container';
+                testContainer.style.position = 'fixed';
+                testContainer.style.top = '-9999px';
+                testContainer.style.left = '-9999px';
+                document.body.appendChild(testContainer);
+                
+                // 尝试渲染组件
+                ReactDOM.render(
+                    React.createElement(window.StartScreen, {
+                        onStartGame: () => console.log('Start game clicked'),
+                        onShowRules: () => console.log('Show rules clicked')
+                    }),
+                    testContainer
+                );
+                
+                // 检查渲染结果
+                setTimeout(() => {
+                    if (testContainer.innerHTML.includes('心理功能对决')) {
+                        resultDiv.innerHTML = '<p class="success">StartScreen组件渲染成功</p>';
+                    } else {
+                        resultDiv.innerHTML = '<p class="error">StartScreen组件渲染可能有问题，未找到预期内容</p>';
+                    }
+                    
+                    // 清理
+                    document.body.removeChild(testContainer);
+                }, 500);
+            } catch (e) {
+                resultDiv.innerHTML = `<p class="error">StartScreen组件测试失败: ${e.message}</p>`;
+            }
+        }
+        
+        // 测试GameBoard组件
+        function testGameBoard() {
+            const resultDiv = document.getElementById('component-test-result');
+            resultDiv.innerHTML = '<div class="debug-message">正在测试GameBoard组件...</div>';
+            
+            try {
+                if (typeof window.GameBoard !== 'function') {
+                    throw new Error('GameBoard组件未定义');
+                }
+                
+                // 创建测试容器
+                const testContainer = document.createElement('div');
+                testContainer.id = 'test-container';
+                testContainer.style.position = 'fixed';
+                testContainer.style.top = '-9999px';
+                testContainer.style.left = '-9999px';
+                document.body.appendChild(testContainer);
+                
+                // 尝试渲染组件
+                ReactDOM.render(
+                    React.createElement(window.GameBoard, {
+                        onEndGame: () => console.log('End game called'),
+                        onShowRules: () => console.log('Show rules clicked')
+                    }),
+                    testContainer
+                );
+                
+                // 检查渲染结果
+                setTimeout(() => {
+                    if (testContainer.querySelector('.game-board')) {
+                        resultDiv.innerHTML = '<p class="success">GameBoard组件渲染成功</p>';
+                    } else {
+                        resultDiv.innerHTML = '<p class="error">GameBoard组件渲染可能有问题，未找到预期内容</p>';
+                    }
+                    
+                    // 清理
+                    document.body.removeChild(testContainer);
+                }, 1000);
+            } catch (e) {
+                resultDiv.innerHTML = `<p class="error">GameBoard组件测试失败: ${e.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html> 
